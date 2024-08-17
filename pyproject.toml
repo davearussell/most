@@ -1,0 +1,11 @@
+[project]
+name = "most"
+version = "0.1.0"
+description = "A text file viewer"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project.scripts]
+most = "most.cli:main"
