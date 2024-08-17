@@ -1,0 +1,17 @@
+#! /usr/bin/python3
+import argparse
+
+import app
+
+
+def main(options):
+    app.App().run()
+
+
+def parse_cmdline():
+    parser = argparse.ArgumentParser()
+    return parser.parse_args()
+
+
+if __name__ == '__main__':
+    main(parse_cmdline())
