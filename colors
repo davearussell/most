@@ -1,0 +1,14 @@
+#! /usr/bin/python3
+import curses
+
+
+def main(scr):
+    curses.use_default_colors()
+    for i in range(curses.COLORS):
+        curses.init_pair(i + 1, i, -1)
+        scr.addstr("Color %d \t┃ " % (i,), curses.color_pair(i))
+    scr.getch()
+
+
+if __name__ == '__main__':
+    curses.wrapper(main)

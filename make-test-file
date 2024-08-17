@@ -1,0 +1,37 @@
+#! /usr/bin/python3
+import argparse
+import random
+
+
+def line_len_generator(spec):
+    if spec.isdigit():
+        return lambda: int(spec)
+    else:
+        a, b = map(int, spec.split('-'))
+        return lambda: random.randrange(a, b + 1)
+
+
+def main(options):
+    with open(options.path, 'w') as f:
+        for i in range(options.n_lines):
+            line_len = options.line_len()
+            prefix = 'line %d ' % (i + 1)
+            suffix = ' length %d' % (line_len,)
+            n_dots = line_len - len(prefix + suffix)
+            line = '%s%s%s' % (prefix, '.' * n_dots, suffix)
+            f.write(line[:line_len] + '\n')
+
+
+def parse_cmdline():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-n', '--n-lines', type=int, default=100,
+                        help='Number of lines in file')
+    parser.add_argument('-l', '--line-len', default='50', type=line_len_generator,
+                        help='Length of each line')
+    parser.add_argument('path', help='Path of output file')
+
+    return parser.parse_args()
+
+
+if __name__ == '__main__':
+    main(parse_cmdline())
