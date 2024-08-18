@@ -5,6 +5,16 @@ from . import document
 from . import terminal
 from . import window
 
+SCROLL_KEYS = {
+    'up':     ['KEY_UP'],
+    'down':   ['KEY_DOWN'],
+    'top':    ['KEY_HOME',  'g'],
+    'bottom': ['KEY_END',   'G'],
+    'pgup':   ['KEY_PPAGE', 'w'],
+    'pgdn':   ['KEY_NPAGE', 'z', ' '],
+}
+SCROLL_MAP = {v: k for k, l in SCROLL_KEYS.items() for v in l}
+
 
 class App:
     def __init__(self, doc):
@@ -29,9 +39,34 @@ class App:
         self.status_msg = fmt % args
         self.redraw()
 
+    def handle_scroll(self, scroll_type):
+        if not self.lines:
+            return
+
+        page_len = self.lines_per_page()
+        last_page = max(0, self.doc.n_lines - page_len)
+        if scroll_type == 'resize':
+            self.set_line_i(self.line_i)
+        elif scroll_type == 'up':
+            if self.line_i > 0:
+                self.set_line_i(self.line_i - 1)
+        elif scroll_type == 'down':
+            if self.line_i < last_page:
+                self.set_line_i(self.line_i + 1)
+        elif scroll_type == 'pgup':
+            if self.line_i > 0:
+                self.set_line_i(max(0, self.line_i - page_len))
+        elif scroll_type == 'pgdn':
+            if self.line_i < last_page:
+                self.set_line_i(min(last_page, self.line_i + page_len))
+        elif scroll_type == 'top':
+            self.set_line_i(0)
+        elif scroll_type == 'bottom':
+            self.set_line_i(last_page)
+
     def handle_resize(self):
         self.log("Size: %d x %d", self.terminal.width, self.terminal.height)
-        self.set_line_i(self.line_i)
+        self.handle_scroll('resize')
 
     def handle_exit(self):
         self._exiting = True
@@ -41,6 +76,8 @@ class App:
         name = curses.keyname(key).decode()
         if name == 'q':
             self.handle_exit()
+        elif name in SCROLL_MAP:
+            self.handle_scroll(SCROLL_MAP[name])
 
     def update_timestamp(self):
         timestamp = time.strftime('%H:%M:%S')
