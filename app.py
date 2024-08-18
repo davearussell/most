@@ -63,6 +63,10 @@ class App:
         self.exiting = True
 
     def line_pos(self, line_i, pos='end'):
+        if not self.lines:
+            return '(empty) |'
+        if line_i >= len(self.lines):
+            line_i = len(self.lines) - 1
         spacing = self.log_n_lines() - len(str(line_i + 1))
         percent = (line_i + (1 if pos == 'end' else 0)) * 100 // len(self.lines)
         return '(%3d%%) L%d %s|' % (percent, line_i + 1, ' ' * spacing)
@@ -92,7 +96,8 @@ class App:
         msg = '%s %s%s' % (self.line_pos(self.line_i + self.screen_height - 3),
                             self.status_msg, ' ' * self.screen_width)
         msg = msg[:self.screen_width - 1]
-        self.scr.addstr(self.screen_height - 1, 0, msg, curses.A_REVERSE)
+        y = min(self.screen_height - 1, len(self.lines) + 1)
+        self.scr.addstr(y, 0, msg, curses.A_REVERSE)
 
     def redraw(self):
         self.scr.erase()
