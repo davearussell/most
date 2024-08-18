@@ -1,6 +1,16 @@
 import curses
 import time
 
+SCROLL_KEYS = {
+    'up':     ['KEY_UP'],
+    'down':   ['KEY_DOWN'],
+    'top':    ['KEY_HOME',  'g'],
+    'bottom': ['KEY_END',   'G'],
+    'pgup':   ['KEY_PPAGE', 'w'],
+    'pgdn':   ['KEY_NPAGE', 'z', ' '],
+}
+SCROLL_MAP = {v: k for k, l in SCROLL_KEYS.items() for v in l}
+
 
 class App:
     REDRAW_TIMEOUT_S = 0.1
@@ -10,6 +20,7 @@ class App:
         self.lines = open(path).read().split('\n')
         if self.lines and not self.lines[-1]:
             self.lines = self.lines[:-1]
+        self.line_i = 0
         self.scr = None
         self.screen_width = None
         self.screen_height = None
@@ -23,6 +34,15 @@ class App:
         self.screen_height, self.screen_width = self.scr.getmaxyx()
         self.log("Size: %d x %d", self.screen_width, self.screen_height)
 
+    def handle_scroll(self, scroll_type):
+        max_line_i = max(0, len(self.lines) - (self.screen_height - 2))
+        distances = {
+            'up': -1, 'down': 1,
+            'top': -len(self.lines), 'bottom': len(self.lines),
+            'pgup': -(self.screen_height - 2), 'pgdn': self.screen_height - 2
+        }
+        self.line_i = max(0, min(self.line_i + distances[scroll_type], max_line_i))
+
     def handle_exit(self, _=None):
         self.exiting = True
 
@@ -34,8 +54,9 @@ class App:
 
     def draw_body(self):
         for i in range(self.screen_height - 2):
-            if i < len(self.lines):
-                self.scr.addstr(i + 1, 0, self.lines[i])
+            line_i = self.line_i + i
+            if 0 <= line_i < len(self.lines):
+                self.scr.addstr(i + 1, 0, self.lines[line_i])
 
     def draw_footer(self):
         msg = (self.status_msg + ' ' * self.screen_width)[:self.screen_width - 1]
@@ -51,6 +72,8 @@ class App:
         name = curses.keyname(key).decode()
         if name == 'q':
             self.handle_exit()
+        elif name in SCROLL_MAP:
+            self.handle_scroll(SCROLL_MAP[name])
         else:
             self.log("Got key: %r (%s)", key, name)
 
