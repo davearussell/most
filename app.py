@@ -1,6 +1,7 @@
 import curses
 import math
 import time
+import doc
 
 SCROLL_KEYS = {
     'up':     ['KEY_UP'],
@@ -23,9 +24,7 @@ class App:
 
     def __init__(self, path):
         self.path = path
-        self.lines = open(path).read().split('\n')
-        if self.lines and not self.lines[-1]:
-            self.lines = self.lines[:-1]
+        self.doc = doc.Document(path)
         self.line_i = 0
         self.scr = None
         self.screen_width = None
@@ -35,7 +34,7 @@ class App:
         self.status_msg = ''
 
     def log_n_lines(self):
-        return math.ceil(math.log(len(self.lines) + 1, 10))
+        return math.ceil(math.log(len(self.doc) + 1, 10))
 
     def init_colors(self):
         self.colors = {}
@@ -51,10 +50,10 @@ class App:
         self.log("Size: %d x %d", self.screen_width, self.screen_height)
 
     def handle_scroll(self, scroll_type):
-        max_line_i = max(0, len(self.lines) - (self.screen_height - 2))
+        max_line_i = max(0, len(self.doc) - (self.screen_height - 2))
         distances = {
             'up': -1, 'down': 1,
-            'top': -len(self.lines), 'bottom': len(self.lines),
+            'top': -len(self.doc), 'bottom': len(self.doc),
             'pgup': -(self.screen_height - 2), 'pgdn': self.screen_height - 2
         }
         self.line_i = max(0, min(self.line_i + distances[scroll_type], max_line_i))
@@ -63,12 +62,12 @@ class App:
         self.exiting = True
 
     def line_pos(self, line_i, pos='end'):
-        if not self.lines:
+        if not self.doc:
             return '(empty) |'
-        if line_i >= len(self.lines):
-            line_i = len(self.lines) - 1
+        if line_i >= len(self.doc):
+            line_i = len(self.doc) - 1
         spacing = self.log_n_lines() - len(str(line_i + 1))
-        percent = (line_i + (1 if pos == 'end' else 0)) * 100 // len(self.lines)
+        percent = (line_i + (1 if pos == 'end' else 0)) * 100 // len(self.doc)
         return '(%3d%%) L%d %s|' % (percent, line_i + 1, ' ' * spacing)
 
     def draw_header(self):
@@ -85,7 +84,7 @@ class App:
             self.scr.addstr(i, x, prefix, self.colors['grey'])
             x += len(prefix)
 
-        line = self.lines[line_i]
+        line = self.doc[line_i]
         if len(line) > self.screen_width - x:
             line = line[:self.screen_width - x - 1]
             self.scr.addstr(i, self.screen_width - 1, '>', curses.A_REVERSE)
@@ -94,14 +93,14 @@ class App:
     def draw_body(self):
         for i in range(self.screen_height - 2):
             line_i = self.line_i + i
-            if 0 <= line_i < len(self.lines):
+            if 0 <= line_i < len(self.doc):
                 self.draw_line(i + 1, line_i)
 
     def draw_footer(self):
         msg = '%s %s%s' % (self.line_pos(self.line_i + self.screen_height - 3),
                             self.status_msg, ' ' * self.screen_width)
         msg = msg[:self.screen_width - 1]
-        y = min(self.screen_height - 1, len(self.lines) + 1)
+        y = min(self.screen_height - 1, len(self.doc) + 1)
         self.scr.addstr(y, 0, msg, curses.A_REVERSE)
 
     def redraw(self):
