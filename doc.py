@@ -1,3 +1,4 @@
+import array
 import mmap
 import os
 
@@ -11,7 +12,7 @@ class Document:
             self.fd = os.open(self.path, os.O_RDONLY)
             self.data = mmap.mmap(self.fd, 0, prot=mmap.PROT_READ)
         self.n_bytes = len(self.data)
-        self.offsets = [-1]
+        self.offsets = array.array('q', [-1])
         self.load()
 
     def load(self):
