@@ -15,7 +15,9 @@ SCROLL_MAP = {v: k for k, l in SCROLL_KEYS.items() for v in l}
 
 
 COLORS = [
+    ('default', -1, -1),
     ('grey', 249, -1),
+    ('dark-blue', 19, -1),
 ]
 
 
@@ -109,6 +111,26 @@ class App:
         self.draw_body()
         self.draw_footer()
 
+    def draw_box(self, x0, y0, x1, y1, color='default'):
+        attr = self.colors[color]
+        width = x1 - x0 + 1
+        height = y1 - y0 + 1
+        assert width > 1 and height > 1
+        self.scr.addstr(y0, x0, '┏' + '━' * (width - 2) + '┓', attr)
+        for y in range(y0 + 1, y1):
+            self.scr.addstr(y, x0, '┃' + ' ' * (width - 2) + '┃', attr)
+        self.scr.addstr(y1, x0, '┗' + '━' * (width - 2) + '┛', attr)
+
+    def popup(self, msg, color='default'):
+        lines = msg.split('\n')
+        width = max(map(len, lines))
+        height = len(lines)
+        y = self.screen_height // 2
+        x = (self.screen_width - width) // 2
+        self.draw_box(x - 2, y - 1, x + width + 1, y + height, color=color)
+        for i, line in enumerate(lines):
+            self.scr.addstr(y + i, x, line)
+
     def handle_input(self, key):
         name = curses.keyname(key).decode()
         if name == 'q':
@@ -127,6 +149,16 @@ class App:
         curses.use_default_colors()
         self.init_colors()
         self.handle_resize()
+
+        import time
+        t0 = time.time()
+        while not self.doc.load_chunk():
+            self.redraw()
+            percent = self.doc.parsed_bytes * 100 // self.doc.n_bytes
+            self.popup('Loading: %3d%%' % (percent,), 'dark-blue')
+            self.scr.refresh()
+        self.log("Loaded document in %.2fs", time.time() - t0)
+
         while not self.exiting:
             self.redraw()
             key = self.scr.getch()
