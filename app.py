@@ -84,7 +84,12 @@ class App:
             prefix = fmt % (line_i + 1,)
             self.scr.addstr(i, x, prefix, self.colors['grey'])
             x += len(prefix)
-        self.scr.addstr(i, x, self.lines[line_i])
+
+        line = self.lines[line_i]
+        if len(line) > self.screen_width - x:
+            line = line[:self.screen_width - x - 1]
+            self.scr.addstr(i, self.screen_width - 1, '>', curses.A_REVERSE)
+        self.scr.addstr(i, x, line)
 
     def draw_body(self):
         for i in range(self.screen_height - 2):
