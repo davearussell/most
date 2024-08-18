@@ -1,15 +1,17 @@
 #! /usr/bin/python3
 import argparse
+import sys
 
 import app
 
 
 def main(options):
-    app.App().run()
+    app.App(options.path).run()
 
 
 def parse_cmdline():
     parser = argparse.ArgumentParser()
+    parser.add_argument('path', help='File to load')
     return parser.parse_args()
 
 

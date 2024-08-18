@@ -5,7 +5,11 @@ import time
 class App:
     REDRAW_TIMEOUT_S = 0.1
 
-    def __init__(self):
+    def __init__(self, path):
+        self.path = path
+        self.lines = open(path).read().split('\n')
+        if self.lines and not self.lines[-1]:
+            self.lines = self.lines[:-1]
         self.scr = None
         self.screen_width = None
         self.screen_height = None
@@ -23,9 +27,15 @@ class App:
         self.exiting = True
 
     def draw_header(self):
-        ts = time.strftime("%H:%M:%S")
-        msg = ' ' * (self.screen_width - len(ts)) +  ts
+        left = self.path
+        right = time.strftime('%H:%M:%S')
+        msg = left + ' ' * (self.screen_width - len(left + right)) + right
         self.scr.addstr(0, 0, msg, curses.A_REVERSE)
+
+    def draw_body(self):
+        for i in range(self.screen_height - 2):
+            if i < len(self.lines):
+                self.scr.addstr(i + 1, 0, self.lines[i])
 
     def draw_footer(self):
         msg = (self.status_msg + ' ' * self.screen_width)[:self.screen_width - 1]
@@ -34,6 +44,7 @@ class App:
     def redraw(self):
         self.scr.erase()
         self.draw_header()
+        self.draw_body()
         self.draw_footer()
 
     def handle_input(self, key):
