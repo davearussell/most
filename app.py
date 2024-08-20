@@ -142,6 +142,23 @@ class App:
         else:
             self.log("Got key: %r (%s)", key, name)
 
+    def load_doc(self):
+        t0 = time.time()
+        while not self.doc.load_chunk():
+            self.redraw()
+            percent = self.doc.parsed_bytes * 100 // self.doc.n_bytes
+            self.popup('Loading: %3d%%' % (percent,), 'dark-blue')
+            self.scr.refresh()
+
+        s = doc.Sectioner(self.doc)
+        while not s.parse_chunk():
+            percent = s.parsed_lines * 100 // s.n_lines
+            self.popup('Parsing: %3d%%' % (percent,), 'dark-blue')
+            self.scr.refresh()
+        doc.sections = s.sections
+
+        self.log("Loaded document in %.2fs", time.time() - t0)
+
     def main(self, scr):
         self.scr = scr
         self.scr.timeout(int(self.REDRAW_TIMEOUT_S * 1000))
@@ -150,14 +167,7 @@ class App:
         self.init_colors()
         self.handle_resize()
 
-        import time
-        t0 = time.time()
-        while not self.doc.load_chunk():
-            self.redraw()
-            percent = self.doc.parsed_bytes * 100 // self.doc.n_bytes
-            self.popup('Loading: %3d%%' % (percent,), 'dark-blue')
-            self.scr.refresh()
-        self.log("Loaded document in %.2fs", time.time() - t0)
+        self.load_doc()
 
         while not self.exiting:
             self.redraw()
