@@ -16,8 +16,11 @@ class Window:
         self.terminal.text(self.app.timestamp, align='right', invert=True)
 
     def draw_body(self):
+        ln_width = self.app.line_number_width
         for i, line in enumerate(self.app.lines):
-            self.terminal.text(line, y=i+1)
+            if ln_width:
+                self.terminal.text(self.app.line_i + i + 1, y=i+1, x=ln_width - 2, align='right', fg='grey')
+            self.terminal.text(line, y=i+1, x=ln_width)
         for j in range(len(self.app.lines), self.body_height):
             self.terminal.text('', y=j+1, bg='light_grey', fill=True)
 

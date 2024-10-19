@@ -26,6 +26,8 @@ class App:
 
         self.timestamp = ''
         self.status_msg = ''
+        self.show_line_numbers = False
+        self.line_number_width = 0
         self.lines = []
         self.line_i = 0
 
@@ -78,6 +80,13 @@ class App:
             self.handle_exit()
         elif name in SCROLL_MAP:
             self.handle_scroll(SCROLL_MAP[name])
+        elif name in 'Ll':
+            self.toggle_line_numbers()
+
+    def toggle_line_numbers(self):
+        self.show_line_numbers = not self.show_line_numbers
+        self.line_number_width = (len(str(self.doc.n_lines)) + 1) if self.show_line_numbers else 0
+        self.redraw()
 
     def update_timestamp(self):
         timestamp = time.strftime('%H:%M:%S')
