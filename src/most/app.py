@@ -1,10 +1,15 @@
 import curses
+import re
 import signal
 import time
+import warnings
 
 from . import document
 from . import terminal
 from . import window
+
+# Compiling user regexps can generate warnings, which will corrupt the curses layout
+warnings.simplefilter("ignore")
 
 KEY_CTRL_C = 3
 
@@ -30,6 +35,7 @@ class App:
 
         self.input_buffer = ''
         self.input_mode = None
+        self.search_pat = None
 
         self.timestamp = ''
         self.status_msg = ''
@@ -130,6 +136,37 @@ class App:
     def handle_exit(self):
         self._exiting = True
 
+    def do_search(self, backward=False, skip_first=False):
+        offset = -1 if backward else 1
+        line_i = self.select_line_i if self.select_line_i is not None else self.line_i
+        line_i += (offset if skip_first else 0)
+        line_i = max(0, min(self.doc.n_lines - 1, line_i))
+        while 0 <= line_i < self.doc.n_lines:
+            line = self.doc.read_line(line_i)
+            if self.search_pat.search(line):
+                break
+            line_i += offset
+        else:
+            self.log("Pattern not found")
+            return
+        if self.select_line_i is not None:
+            self.select_line(line_i)
+        else:
+            self.set_line_i(line_i)
+
+    def start_search(self, text):
+        try:
+            self.search_pat = re.compile(text)
+        except:
+            self.search_pat = None
+            self.log("Invalid pattern")
+        else:
+            self.do_search()
+
+    def cancel_search(self):
+        self.search_pat = None
+        self.redraw()
+
     def handle_text(self, name):
         if name == '^C':
             self.reset_input()
@@ -137,6 +174,17 @@ class App:
             self.set_input_buffer(self.input_buffer[:-1])
             if self.input_mode == 'n' and not self.input_buffer:
                 self.reset_input()
+        elif self.input_mode == 'search':
+            is_printable = len(name) == 1
+            if is_printable:
+                self.set_input_buffer(self.input_buffer + name)
+            elif name == '^J':
+                buf = self.input_buffer
+                self.reset_input()
+                if buf:
+                    self.start_search(buf)
+                else:
+                    self.cancel_search()
         elif self.input_mode in [None, 'n'] and name.isdigit():
             if self.input_mode is None:
                 self.set_input_mode('n')
@@ -172,6 +220,11 @@ class App:
                 else:
                     new_offset = midpoint
                 self.set_line_i(self.select_line_i - new_offset)
+        elif name == '/':
+            self.set_input_mode('search')
+        elif name in 'nNpP':
+            if self.search_pat:
+                self.do_search(backward=(name != 'n'), skip_first=True)
 
     def handle_sigint(self, *_):
         self.handle_key(KEY_CTRL_C)
