@@ -32,7 +32,7 @@ class App:
         self.line_i = 0
 
     def lines_per_page(self):
-        return self.window.body_height
+        return self.window.body_height - self.doc.n_header_lines
 
     def redraw(self):
         self._redraw = True

@@ -1,6 +1,8 @@
 from . import cmost
 
 class Document:
+    n_header_lines = 0
+
     def __init__(self, path):
         self.path = path
         self.app = None

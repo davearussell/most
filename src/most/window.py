@@ -29,8 +29,9 @@ class Window:
     def draw_body(self):
         ln_width = self.app.line_number_width
         for i, line in enumerate(self.app.lines):
-            if ln_width:
-                self.terminal.text(self.app.line_i + i + 1, y=i+1, x=ln_width - 2, align='right', fg='grey')
+            if ln_width and i >= self.app.doc.n_header_lines:
+                line_no = self.app.line_i + i + 1 - self.app.doc.n_header_lines
+                self.terminal.text(line_no, y=i+1, x=ln_width - 2, align='right', fg='grey')
             self.terminal.text(line, y=i+1, x=ln_width)
             if len(line) > self.terminal.width - ln_width:
                 self.terminal.text('>', y=i+1, x=-1, invert=True)
