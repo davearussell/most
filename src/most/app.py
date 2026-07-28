@@ -5,6 +5,8 @@ from . import document
 from . import terminal
 from . import window
 
+class Unspecified: pass
+
 SCROLL_KEYS = {
     'up':     ['KEY_UP'],
     'down':   ['KEY_DOWN'],
@@ -28,6 +30,7 @@ class App:
         self.status_msg = ''
         self.show_line_numbers = False
         self.line_number_width = 0
+        self.select_line_i = None
         self.lines = []
         self.line_i = 0
 
@@ -41,30 +44,68 @@ class App:
         self.status_msg = fmt % args
         self.redraw()
 
+    def select_line(self, i):
+        page_len = self.lines_per_page()
+        if i is not None:
+            assert 0 <= i < self.doc.n_lines
+            if i < self.line_i:
+                self.set_line_i(i, i)
+                return
+            if i >= self.line_i + page_len:
+                self.set_line_i(i - page_len + 1, i)
+                return
+        self.select_line_i = i
+        self.redraw()
+
     def handle_scroll(self, scroll_type):
         if not self.lines:
             return
 
         page_len = self.lines_per_page()
         last_page = max(0, self.doc.n_lines - page_len)
+        last_line = self.doc.n_lines - 1
         if scroll_type == 'resize':
-            self.set_line_i(self.line_i)
+            if self.select_line_i is not None:
+                rel_i = self.select_line_i - self.line_i
+                if rel_i >= self.lines_per_page():
+                    self.select_line_i = self.self_line + self.lines_per_page - 1
+            self.set_line_i(self.line_i, self.select_line_i)
         elif scroll_type == 'up':
-            if self.line_i > 0:
+            if self.select_line_i is not None:
+                self.select_line(max(0, self.select_line_i - 1))
+            elif self.line_i > 0:
                 self.set_line_i(self.line_i - 1)
         elif scroll_type == 'down':
-            if self.line_i < last_page:
+            if self.select_line_i is not None:
+                self.select_line(min(last_line, self.select_line_i + 1))
+            elif self.line_i < last_page:
                 self.set_line_i(self.line_i + 1)
         elif scroll_type == 'pgup':
             if self.line_i > 0:
-                self.set_line_i(max(0, self.line_i - page_len))
+                line_i = max(0, self.line_i - page_len)
+                if self.select_line_i is None:
+                    select_line_i = None
+                else:
+                    select_line_i = max(0, self.select_line_i - page_len)
+                self.set_line_i(line_i, select_line_i)
         elif scroll_type == 'pgdn':
             if self.line_i < last_page:
-                self.set_line_i(min(last_page, self.line_i + page_len))
+                line_i = min(last_page, self.line_i + page_len)
+                if self.select_line_i is None:
+                    select_line_i = None
+                else:
+                    select_line_i = min(last_line, self.select_line_i + page_len)
+                self.set_line_i(line_i, select_line_i)
         elif scroll_type == 'top':
-            self.set_line_i(0)
+            if self.select_line_i is not None:
+                self.select_line(0)
+            else:
+                self.set_line_i(0)
         elif scroll_type == 'bottom':
-            self.set_line_i(last_page)
+            if self.select_line_i is not None:
+                self.select_line(last_line)
+            else:
+                self.set_line_i(last_page)
 
     def handle_resize(self):
         self.log("Size: %d x %d", self.terminal.width, self.terminal.height)
@@ -82,6 +123,8 @@ class App:
             self.handle_scroll(SCROLL_MAP[name])
         elif name in 'Ll':
             self.toggle_line_numbers()
+        elif name in 'eE':
+            self.select_line(self.line_i if self.select_line_i is None else None)
 
     def toggle_line_numbers(self):
         self.show_line_numbers = not self.show_line_numbers
@@ -95,17 +138,19 @@ class App:
             self.redraw()
             return True
 
-    def set_line_i(self, line_i):
+    def set_line_i(self, line_i, select_line_i=Unspecified):
         if not self.doc.n_lines:
             return
         assert 0 <= line_i < self.doc.n_lines
         self.line_i = line_i
+        if select_line_i != Unspecified:
+            self.select_line_i = select_line_i
         self.lines = self.doc.read_lines(self.line_i, self.lines_per_page())
         self.redraw()
 
     def reset(self):
         self.doc.init(self)
-        self.set_line_i(0)
+        self.set_line_i(0, None)
 
     def background_work(self):
         return self.update_timestamp()

@@ -29,10 +29,14 @@ class Window:
     def draw_body(self):
         ln_width = self.app.line_number_width
         for i, line in enumerate(self.app.lines):
+            line_i = self.app.line_i + i - self.app.doc.n_header_lines
             if ln_width and i >= self.app.doc.n_header_lines:
-                line_no = self.app.line_i + i + 1 - self.app.doc.n_header_lines
-                self.terminal.text(line_no, y=i+1, x=ln_width - 2, align='right', fg='grey')
-            self.terminal.text(line, y=i+1, x=ln_width)
+                self.terminal.text(line_i + 1, y=i+1, x=ln_width - 2, align='right', fg='grey')
+
+            attr = {}
+            if line_i == self.app.select_line_i:
+                attr = {'bg': 'light_blue', 'fill': True}
+            self.terminal.text(line, y=i+1, x=ln_width, **attr)
             if len(line) > self.terminal.width - ln_width:
                 self.terminal.text('>', y=i+1, x=-1, invert=True)
         for j in range(len(self.app.lines), self.body_height):
