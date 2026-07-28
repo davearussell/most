@@ -204,6 +204,8 @@ class App:
     def handle_key(self, key):
         self.log("")
         name = curses.keyname(key).decode()
+        if self.doc.handle_key(name):
+            return
         if self.handle_text(name):
             return
 
