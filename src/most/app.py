@@ -1,4 +1,5 @@
 import curses
+import signal
 import time
 
 from . import document
@@ -6,6 +7,8 @@ from . import terminal
 from . import window
 
 class Unspecified: pass
+
+KEY_CTRL_C = 3
 
 SCROLL_KEYS = {
     'up':     ['KEY_UP'],
@@ -149,6 +152,9 @@ class App:
             if self.select_line_i is not None:
                 self.orient_on_selected_line()
 
+    def handle_sigint(self, *_):
+        self.handle_key(KEY_CTRL_C)
+
     def toggle_line_numbers(self):
         self.show_line_numbers = not self.show_line_numbers
         self.line_number_width = (len(str(self.doc.n_lines)) + 1) if self.show_line_numbers else 0
@@ -179,6 +185,7 @@ class App:
         return self.update_timestamp()
 
     def main(self, scr):
+        signal.signal(signal.SIGINT, self.handle_sigint)
         self.terminal = terminal.Terminal(scr)
         self.window = window.Window(self)
         self.reset()
