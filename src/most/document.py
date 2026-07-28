@@ -1,3 +1,5 @@
+from . import cmost
+
 class Document:
     def __init__(self, path):
         self.path = path
@@ -17,11 +19,11 @@ class Document:
 class TextDocument(Document):
     def __init__(self, path):
         super().__init__(path)
-        self.lines = list(open(self.path))
-        self.n_lines = len(self.lines)
+        self.n_lines = cmost.read_file(self.path)
 
     def read_line(self, line_i):
-        return self.lines[line_i]
+        return cmost.read_line(line_i)
 
     def read_lines(self, line_i, n_lines):
-        return self.lines[line_i : line_i + n_lines]
+        n_lines = min(n_lines, self.n_lines - line_i)
+        return [cmost.read_line(line_i + i) for i in range(n_lines)]

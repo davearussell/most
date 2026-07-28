@@ -9,3 +9,8 @@ build-backend = "setuptools.build_meta"
 
 [project.scripts]
 most = "most.cli:main"
+
+[tool.setuptools]
+ext-modules = [
+    {name = "most.cmost", sources = ["src/cmost.c"], extra-compile-args = ["-Werror", "-Wall"]}
+]
