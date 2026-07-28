@@ -107,6 +107,26 @@ class App:
             else:
                 self.set_line_i(last_page)
 
+    def orient_on_selected_line(self):
+        """Cycle between these positions on screen for the selected line:
+           (skipping over states that would take us into negative line numbers)
+             * Place line_i in middle of screen
+             * Place line_i at top of screen
+             * Place line_i at bottom of screen"""
+        page_len = self.lines_per_page()
+        midpoint = page_len // 2
+        offset = self.select_line_i - self.line_i
+        state_map = {None: 'middle', 'middle': 'top', 'top': 'bottom', 'bottom': 'middle'}
+        state_offsets = {'middle': midpoint, 'top': 0, 'bottom': page_len - 1}
+        offset_states = {v: k for k, v in state_offsets.items()}
+        state = offset_states.get(offset, None)
+        while True:
+            state = state_map[state]
+            new_line_i = self.select_line_i - state_offsets[state]
+            if new_line_i >= 0:
+                self.set_line_i(new_line_i)
+                break
+
     def handle_resize(self):
         self.log("Size: %d x %d", self.terminal.width, self.terminal.height)
         self.handle_scroll('resize')
@@ -125,6 +145,9 @@ class App:
             self.toggle_line_numbers()
         elif name in 'eE':
             self.select_line(self.line_i if self.select_line_i is None else None)
+        elif name == '^L':
+            if self.select_line_i is not None:
+                self.orient_on_selected_line()
 
     def toggle_line_numbers(self):
         self.show_line_numbers = not self.show_line_numbers
