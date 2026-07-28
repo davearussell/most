@@ -23,6 +23,9 @@ class Document:
                 return line_i
             line_i += direction
 
+    def handle_key(self, name):
+        return False
+
 class TextDocument(Document):
     def __init__(self, path):
         super().__init__(path)
