@@ -43,7 +43,11 @@ class Window:
             self.terminal.text('', y=j+1, bg='light_grey', fill=True)
 
     def draw_footer(self):
-        text = '%s │ %s' % (self.line_status(bottom=True), self.app.status_msg)
+        mode_char = {'n': ':', None: ' '}[self.app.input_mode]
+        msg = mode_char + self.app.input_buffer
+        if self.app.status_msg:
+            msg = '%s │ %s' % (self.app.status_msg, msg)
+        text = '%s │ %s' % (self.line_status(bottom=True), msg)
         self.terminal.text(text, y=-1, fill=True, invert=True)
 
     def redraw(self):
