@@ -36,14 +36,32 @@ class Window:
             attr = {}
             if line_i == self.app.select_line_i:
                 attr = {'bg': 'light_blue', 'fill': True}
-            self.terminal.text(line, y=i+1, x=ln_width, **attr)
+            if self.app.search_pat:
+                words = []
+                pos = 0
+                for word in self.app.search_pat.findall(line):
+                    word_len = len(word)
+                    word_pos = line.find(word, pos)
+                    if word_pos > pos:
+                        words.append((line[pos : word_pos], False))
+                    words.append((line[word_pos : word_pos + word_len], True))
+                    pos = word_pos + word_len
+                words.append((line[pos:], False))
+            else:
+                words = [(line, False)]
+
+            x = ln_width
+            for word, is_match in words:
+                self.terminal.text(word, y=i+1, x=x, invert=is_match, **attr)
+                x += len(word)
+
             if len(line) > self.terminal.width - ln_width:
                 self.terminal.text('>', y=i+1, x=-1, invert=True)
         for j in range(len(self.app.lines), self.body_height):
             self.terminal.text('', y=j+1, bg='light_grey', fill=True)
 
     def draw_footer(self):
-        mode_char = {'n': ':', None: ' '}[self.app.input_mode]
+        mode_char = {'search': '/', 'n': ':', None: ' '}[self.app.input_mode]
         msg = mode_char + self.app.input_buffer
         if self.app.status_msg:
             msg = '%s │ %s' % (self.app.status_msg, msg)
