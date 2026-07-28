@@ -112,6 +112,18 @@ class App:
             self.toggle_line_numbers()
         elif name in 'eE':
             self.select_line(self.line_i if self.select_line_i is None else None)
+        elif name == '^L':
+            if self.select_line_i is not None:
+                page_len = self.lines_per_page()
+                offset = self.select_line_i - self.line_i
+                midpoint = page_len // 2
+                if offset == midpoint:
+                    new_offset = 0
+                elif offset == 0:
+                    new_offset = page_len - 1
+                else:
+                    new_offset = midpoint
+                self.set_line_i(self.select_line_i - new_offset)
 
     def toggle_line_numbers(self):
         self.show_line_numbers = not self.show_line_numbers
