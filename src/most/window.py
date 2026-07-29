@@ -13,13 +13,13 @@ class Window:
 
     def line_status(self, bottom=False):
         if self.app.doc.n_lines == 0:
-            return '(100%) L0'
+            return '(100%) L0  C0'
         line_i = min(self.app.doc.n_lines - 1,
                      self.app.line_i + bottom * (self.body_height - 1))
         percent = (line_i + bottom) * 100 // self.app.doc.n_lines
         line_s = str(line_i + 1)
         padding = ' ' * (len(str(self.app.doc.n_lines)) - len(line_s))
-        return '(%3d%%) L%s%s' % (percent, line_s, padding)
+        return '(%3d%%) L%s%s  C%d' % (percent, line_s, padding, self.app.col_i)
 
     def draw_header(self):
         lhs = "%s │ %s" % (self.line_status(), self.app.doc.path)
@@ -51,11 +51,16 @@ class Window:
                 words = [(line, False)]
 
             x = ln_width
+            skip = self.app.col_i
             for word, is_match in words:
+                if skip:
+                    old_len = len(word)
+                    word = word[skip:]
+                    skip -= (old_len - len(word))
                 self.terminal.text(word, y=i+1, x=x, invert=is_match, **attr)
                 x += len(word)
 
-            if len(line) > self.terminal.width - ln_width:
+            if len(line) > self.terminal.width - ln_width + self.app.col_i:
                 self.terminal.text('>', y=i+1, x=-1, invert=True)
         for j in range(len(self.app.lines), self.body_height):
             self.terminal.text('', y=j+1, bg='light_grey', fill=True)
