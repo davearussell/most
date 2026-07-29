@@ -16,6 +16,8 @@ KEY_CTRL_C = 3
 SCROLL_KEYS = {
     'up':     ['KEY_UP'],
     'down':   ['KEY_DOWN'],
+    'left':   ['KEY_LEFT'],
+    'right':  ['KEY_RIGHT'],
     'top':    ['KEY_HOME'],
     'goto':   ['g'],
     'bottom': ['KEY_END',   'G'],
@@ -44,6 +46,7 @@ class App:
         self.select_line_i = None
         self.lines = []
         self.line_i = 0
+        self.col_i = 0
 
     def scroll_n(self, default=1):
         if self.input_mode == 'n':
@@ -82,6 +85,11 @@ class App:
     def reset_input(self):
         self.set_input_buffer('')
         self.set_input_mode(None)
+
+    def set_col_i(self, i):
+        assert i >= 0
+        self.col_i = i
+        self.redraw()
 
     def handle_scroll(self, scroll_type):
         if not self.lines:
@@ -128,6 +136,10 @@ class App:
                 self.select_line(last_line)
             else:
                 self.set_line_i(last_page)
+        elif scroll_type == 'right':
+            self.set_col_i(self.col_i + self.scroll_n(10))
+        elif scroll_type == 'left':
+            self.set_col_i(max(0, self.col_i - self.scroll_n(10)))
 
     def handle_resize(self):
         self.log("Size: %d x %d", self.terminal.width, self.terminal.height)
@@ -248,6 +260,7 @@ class App:
     def reset(self):
         self.doc.init(self)
         self.set_line_i(0)
+        self.set_col_i(0)
         self.select_line(None)
 
     def background_work(self):
