@@ -26,6 +26,18 @@ class Document:
     def handle_key(self, name):
         return False
 
+class StringDocument(Document):
+    def __init__(self, text, name='(untitled)'):
+        super().__init__(name)
+        self.lines = text.split('\n')
+        self.n_lines = len(self.lines)
+
+    def read_line(self, line_i):
+        return self.lines[line_i]
+
+    def read_lines(self, line_i, n_lines):
+        return self.lines[line_i : line_i + n_lines]
+
 class TextDocument(Document):
     def __init__(self, path):
         super().__init__(path)
