@@ -2,6 +2,51 @@ import curses
 import time
 
 
+def highlight_words(words, highlight_ranges, debug=0):
+    word_start = 0
+    words_out = []
+    for word, word_attr in words:
+        highlight_attr = dict(word_attr, invert=not word_attr.get('invert'))
+        word_end = word_start + len(word)
+        if debug:
+            print(f"next word {word!r}[{word_start}:{word_end}]")
+        while highlight_ranges and highlight_ranges[0][0] < word_end:
+            inv_start, inv_end = highlight_ranges.pop(0)
+            if debug:
+                print(f"next inv[{inv_start}:{inv_end}]")
+            if inv_start > word_start:
+                offset = inv_start - word_start
+                if debug:
+                    print(f"  prefix not inv {word[:offset]!r}[0:{offset}]")
+                words_out.append((word[:offset], word_attr))
+                word = word[offset:]
+                word_start = inv_start
+            assert inv_start == word_start
+            if inv_end < word_end:
+                offset = inv_end - inv_start
+                if debug:
+                    print(f"  partial inv {word[:offset]!r}[0:{offset}]")
+                words_out.append((word[:offset], highlight_attr))
+                word = word[offset:]
+                word_start += offset
+            else:
+                if debug:
+                    print(f"  full inv {word!r}[{word_start}:{word_end}]")
+                words_out.append((word, highlight_attr))
+                inv_start += len(word)
+                assert inv_start <= inv_end
+                assert inv_start == word_end
+                highlight_ranges.insert(0, (inv_start, inv_end))
+                word = ''
+                word_start = word_end
+        if word:
+            if debug:
+                print(f"  suffix not inv {word!r}[{word_start}:{word_end}]")
+            words_out.append((word, word_attr))
+            word_start = word_end
+    return words_out
+
+
 class Window:
     def __init__(self, app):
         self.app = app
@@ -36,28 +81,33 @@ class Window:
             attr = {}
             if line_i == self.app.select_line_i:
                 attr = {'bg': 'light_blue', 'fill': True}
-            if self.app.search_pat:
-                words = []
-                pos = 0
-                for word in self.app.search_pat.findall(line):
-                    word_len = len(word)
-                    word_pos = line.find(word, pos)
-                    if word_pos > pos:
-                        words.append((line[pos : word_pos], False))
-                    words.append((line[word_pos : word_pos + word_len], True))
-                    pos = word_pos + word_len
-                words.append((line[pos:], False))
+
+            # Line is either a plain str, or a sequence of (str, attr) tuples
+            if isinstance(line, str):
+                text = line
+                words = [(line, {})]
             else:
-                words = [(line, False)]
+                text = ''.join(text for (text, _) in line)
+                words = line
+
+            if self.app.search_pat:
+                invert_ranges = []
+                search_pos = 0
+                for word in self.app.search_pat.findall(text):
+                    word_start_pos = text.find(word, search_pos)
+                    word_end_pos = word_start_pos + len(word)
+                    invert_ranges.append((word_start_pos, word_end_pos))
+                    search_pos = word_end_pos
+                words = highlight_words(words, invert_ranges)
 
             x = ln_width
             skip = self.app.col_i
-            for word, is_match in words:
+            for word, word_attr in words:
                 if skip:
                     old_len = len(word)
                     word = word[skip:]
                     skip -= (old_len - len(word))
-                self.terminal.text(word, y=i+1, x=x, invert=is_match, **attr)
+                self.terminal.text(word, y=i+1, x=x, **(attr | word_attr))
                 x += len(word)
 
             if len(line) > self.terminal.width - ln_width + self.app.col_i:
