@@ -137,16 +137,12 @@ class App:
         self._exiting = True
 
     def do_search(self, backward=False, skip_first=False):
-        offset = -1 if backward else 1
+        direction = -1 if backward else 1
         line_i = self.select_line_i if self.select_line_i is not None else self.line_i
-        line_i += (offset if skip_first else 0)
+        line_i += (direction if skip_first else 0)
         line_i = max(0, min(self.doc.n_lines - 1, line_i))
-        while 0 <= line_i < self.doc.n_lines:
-            line = self.doc.read_line(line_i)
-            if self.search_pat.search(line):
-                break
-            line_i += offset
-        else:
+        line_i = self.doc.search(self.search_pat, line_i, direction)
+        if line_i is None:
             self.log("Pattern not found")
             return
         if self.select_line_i is not None:

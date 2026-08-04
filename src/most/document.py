@@ -17,6 +17,11 @@ class Document:
     def read_lines(self, line_i, n_lines):
         raise NotImplementedError()
 
+    def search(self, pat, line_i, direction):
+        while 0 <= line_i < self.n_lines:
+            if pat.search(self.read_line(line_i)):
+                return line_i
+            line_i += direction
 
 class TextDocument(Document):
     def __init__(self, path):
