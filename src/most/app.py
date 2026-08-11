@@ -7,6 +7,7 @@ import warnings
 from . import document
 from . import terminal
 from . import window
+from .help import HelpDocument
 
 # Compiling user regexps can generate warnings, which will corrupt the curses layout
 warnings.simplefilter("ignore")
@@ -236,6 +237,8 @@ class App:
         elif name in 'nNpP':
             if self.search_pat:
                 self.do_search(backward=(name != 'n'), skip_first=True)
+        elif name in 'hH?' and not isinstance(self.doc, HelpDocument):
+            self.push_doc(HelpDocument())
 
     def handle_sigint(self, *_):
         self.handle_key(KEY_CTRL_C)
