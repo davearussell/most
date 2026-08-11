@@ -30,6 +30,7 @@ SCROLL_MAP = {v: k for k, l in SCROLL_KEYS.items() for v in l}
 class App:
     def __init__(self, doc):
         self.doc = doc
+        self.doc_stack = []
         self.window = None
         self.terminal = None
         self._exiting = False
@@ -259,11 +260,20 @@ class App:
         self.lines = self.doc.read_lines(self.line_i, self.lines_per_page())
         self.redraw()
 
-    def reset(self):
+    def reset(self, line_i=0, col_i=0, select_line_i=None):
         self.doc.init(self)
-        self.set_line_i(0)
-        self.set_col_i(0)
-        self.select_line(None)
+        self.set_line_i(line_i)
+        self.set_col_i(col_i)
+        self.select_line(select_line_i)
+
+    def push_doc(self, doc):
+        self.doc_stack.append((self.doc, self.line_i, self.col_i, self.select_line_i))
+        self.doc = doc
+        self.reset()
+
+    def pop_doc(self):
+        self.doc, *reset_args = self.doc_stack.pop()
+        self.reset(*reset_args)
 
     def background_work(self):
         return self.update_timestamp()
