@@ -79,6 +79,7 @@ class App:
                 return
         self.select_line_i = i
         self.redraw()
+        self.doc.post_select_line_hook(i)
 
     def set_input_buffer(self, s):
         self.input_buffer = s
@@ -288,6 +289,9 @@ class App:
             self.select_line_i = select_line_i
         self.lines = self.doc.read_lines(self.line_i, self.lines_per_page())
         self.redraw()
+        self.doc.post_scroll_hook(line_i)
+        if select_line_i != Unspecified:
+            self.doc.post_select_line_hook(select_line_i)
 
     def reset(self, line_i=0, col_i=0, select_line_i=None):
         self.doc.init(self)

@@ -23,6 +23,12 @@ class Document:
                 return line_i
             line_i += direction
 
+    def post_scroll_hook(self, line_i):
+        pass
+
+    def post_select_line_hook(self, line_i):
+        pass
+
     def handle_key(self, name):
         return False
 
