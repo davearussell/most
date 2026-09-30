@@ -1,4 +1,7 @@
-from . import cmost
+try:
+    from . import cmost
+except ImportError:
+    cmost = None
 
 class Document:
     n_header_lines = 0
@@ -44,14 +47,30 @@ class StringDocument(Document):
     def read_lines(self, line_i, n_lines):
         return self.lines[line_i : line_i + n_lines]
 
-class TextDocument(Document):
+
+class PyTextDocument(Document):
     def __init__(self, path):
         super().__init__(path)
-        self.n_lines = cmost.read_file(self.path)
+        self.lines = open(path).read().split('\n')
+        self.n_lines = len(self.lines)
 
     def read_line(self, line_i):
-        return cmost.read_line(line_i)
+        return self.lines[line_i]
 
     def read_lines(self, line_i, n_lines):
-        n_lines = min(n_lines, self.n_lines - line_i)
-        return [cmost.read_line(line_i + i) for i in range(n_lines)]
+        return self.lines[line_i : line_i + n_lines]
+
+if cmost:
+    class TextDocument(Document):
+        def __init__(self, path):
+            super().__init__(path)
+            self.n_lines = cmost.read_file(self.path)
+
+        def read_line(self, line_i):
+            return cmost.read_line(line_i)
+
+        def read_lines(self, line_i, n_lines):
+            n_lines = min(n_lines, self.n_lines - line_i)
+            return [cmost.read_line(line_i + i) for i in range(n_lines)]
+else:
+    TextDocument = PyTextDocument
