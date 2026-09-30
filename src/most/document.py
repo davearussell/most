@@ -1,3 +1,5 @@
+from . import tabulate
+
 try:
     from . import cmost
 except ImportError:
@@ -74,3 +76,26 @@ if cmost:
             return [cmost.read_line(line_i + i) for i in range(n_lines)]
 else:
     TextDocument = PyTextDocument
+
+
+class TableDocument(Document):
+    n_header_lines = 2
+
+    def __init__(self, rows, cols, name='(untitled)'):
+        super().__init__(name)
+        self.rows = rows
+        self.cols = cols
+        self.col_names = [name for name, fn in self.cols]
+        self.col_fns = [fn for name, fn in self.cols]
+        self.n_lines = len(rows)
+
+    def get_row(self, row_i):
+        return [fn(self.rows[row_i]) for fn in self.col_fns]
+
+    def read_line(self, line_i):
+        return '| ' + ' | '.join(map(str, self.get_row(line_i))) + ' |'
+
+    def read_lines(self, start_line_i, n_lines):
+        n_lines = min(n_lines, self.n_lines - start_line_i)
+        rows = [self.col_names] + [self.get_row(i) for i in range(start_line_i, start_line_i + n_lines)]
+        return tabulate.tabulate(rows, grid=True).split('\n')
