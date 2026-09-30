@@ -1,6 +1,7 @@
 import curses
 import re
 import signal
+import sys
 import time
 import warnings
 
@@ -330,4 +331,9 @@ class App:
                 self._redraw = False
 
     def run(self):
-        curses.wrapper(self.main)
+        if sys.stdout.isatty():
+            curses.wrapper(self.main)
+        else:
+            self.doc.init(self)
+            for line in self.doc.read_lines(0, self.doc.n_lines):
+                print(line)
